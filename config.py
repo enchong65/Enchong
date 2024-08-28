@@ -5,7 +5,7 @@ class Config:
 
 class DevConfig(Config):
     DEBUG = True
-    SQLALCHEMY_DATABASE_URI = 'Enchong'
+    SQLALCHEMY_DATABASE_URI = 'postgresql://admin:Timmy055055@localhost:5432/Enchong'
 
 class ProdConfig(Config):
     DEBUG = True
