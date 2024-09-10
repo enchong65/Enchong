@@ -270,7 +270,8 @@ def service_select_time_event(event):
 
     selected_date = str(event.postback.params['date'])
     # 這裡你可以處理選擇的日期，例如保存到數據庫或進行下一步操作
-    weekday = selected_date.weekday()
+    formate_date = selected_date.split('-')
+    weekday = datetime.date(int(formate_date[0]),int(formate_date[1]),int(formate_date[2])).weekday()
     response_message = TextSendMessage(text=f'您選擇: {selected_date}{week[weekday]}\n接下來請選擇時間')
     
     # 這裡你可以添加選擇時間的邏輯，例如調用 service_select_time_event
