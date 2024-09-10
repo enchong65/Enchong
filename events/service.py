@@ -147,7 +147,7 @@ def service_event(event, user):
                 "height": "sm",
                 "action": {
                 "type": "postback",
-                "label": "頭皮檢測",
+                "label": "頭皮檢測" if not reservation else '取消預約',
                 "data": "action=book&itemid=examine",
                 "displayText": "頭皮檢測" if not reservation else '取消預約'
                 }
@@ -163,7 +163,7 @@ def service_event(event, user):
                     "height": "sm",
                     "action": {
                     "type": "postback",
-                    "label": "頭皮護理",
+                    "label": "頭皮護理" if not reservation else '取消預約',
                     "data": "action=book&itemid=scalpcare",
                     "displayText": "頭皮護理" if not reservation else '取消預約'
                     }
