@@ -34,12 +34,12 @@ def callback():
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
     msg=str(event.message.text)
-    
+    user = User.query.filter(User.line_id == event.source.user_id).first()
     if msg =='堂數顯示':
         about_us_event(event)
     if msg =='我要預約':
         # service_category_event(event)
-        service_event(event)
+        service_event(event,user)
     elif msg.startswith('*'):
         if event.source.user_id not in ['U5bbd73b1091f77b5de8e32e21b7bbc47','Uadad19504e6ebdccb706bd5d26031d37']:
             return
@@ -48,7 +48,7 @@ def handle_message(event):
     else:
         text_message = TextSendMessage(msg)
     # line_bot_api.reply_message(event.reply_token, text_message)
-    user = User.query.filter(User.line_id == event.source.user_id).first()
+    
     if not user:
         profile = line_bot_api.get_profile(event.source.user_id)
         # print(profile.display_name)
