@@ -6,7 +6,7 @@ from events.admin import *
 #======python的函數庫==========
 
 app = Flask(__name__)
-app.config.from_object(os.environ.get('APP_SETTINGS', 'config.DevConfig'))
+app.config.from_object(os.environ.get('APP_SETTINGS', 'config.ProdConfig'))
 # app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://admin:Timmy055055@localhost:5432/Enchong'
 db.app = app
 db.init_app(app)

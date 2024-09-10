@@ -9,4 +9,4 @@ class DevConfig(Config):
 
 class ProdConfig(Config):
     DEBUG = True
-    SQLALCHEMY_DATABASE_URI = os.environ.get('postgresql://database_rzcc_user:vzHmHnYl7XI27VZ52vyHcyHgoKLZ6iT6@dpg-crfuoabqf0us73dd198g-a/database_rzcc')
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
