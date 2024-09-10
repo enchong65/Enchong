@@ -235,19 +235,27 @@ def service_select_event(event):
     today = datetime.date.today()
     max_date = today + datetime.timedelta(days=30)  # 允許選擇未來30天內的日期
 
+    # 將日期格式化為 'YYYY-MM-DD 星期X' 的格式
+    def format_date_with_weekday(date):
+        return date.strftime("%Y-%m-%d %A")  # %A 代表星期幾的全名
+
+    # 這裡將日期以 %Y-%m-%d %A 格式存入 data
+    formatted_date = format_date_with_weekday(today)
+    formatted_max_date = format_date_with_weekday(max_date)
+    # 創建日期選擇器訊息，並將格式化的日期保存進 data
     datetime_picker = TemplateSendMessage(
         alt_text='選擇日期',
         template=ButtonsTemplate(
             title='選擇預約日期',
-            text='請選擇您想要的日期',
+            text=f'今天是 {formatted_date}，請選擇您想要的日期',
             actions=[
                 DatetimePickerAction(
                     label='選擇日期',
-                    data=f'action=select_time&itemid={data["itemid"]}',
+                    data=f'action=select_time&date={formatted_date}&itemid={data["itemid"]}',
                     mode='date',
                     initial=today.isoformat(),
                     min=today.isoformat(),
-                    max=max_date.isoformat()
+                    max=formatted_max_date.isoformat()
                 )
             ]
         )
