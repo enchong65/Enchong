@@ -42,7 +42,7 @@ services = {
     },
 }
 
-
+week=['星期一', '星期二', '星期三', '星期四', '星期五', '星期六', '星期日']
 
 
 
@@ -232,7 +232,7 @@ def service_select_event(event):
     if booked(event, user):
         return 
     data = dict(parse_qsl(event.postback.data))
-    today = datetime.date.today().strftime("%Y-%m-%d %A")
+    today = datetime.date.today()
     max_date = today + datetime.timedelta(days=30)  # 允許選擇未來30天內的日期
 
     datetime_picker = TemplateSendMessage(
@@ -270,7 +270,8 @@ def service_select_time_event(event):
 
     selected_date = str(event.postback.params['date'])
     # 這裡你可以處理選擇的日期，例如保存到數據庫或進行下一步操作
-    response_message = TextSendMessage(text=f'您選擇: {selected_date}\n接下來請選擇時間')
+    weekday = selected_date.weekday()
+    response_message = TextSendMessage(text=f'您選擇: {selected_date}{week[weekday]}\n接下來請選擇時間')
     
     # 這裡你可以添加選擇時間的邏輯，例如調用 service_select_time_event
     # line_bot_api.reply_message(event.reply_token, [response_message])
