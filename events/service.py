@@ -44,14 +44,19 @@ services = {
 
 week=['星期一', '星期二', '星期三', '星期四', '星期五', '星期六', '星期日']
 
-
+book_list ={
+    '星期一':['10:30']
+}
 
 
 def service_category_event(event):
     print(event)
 
 
-def service_event(event):
+def service_event(event, user):
+    reservation = Reservation.query.filter(Reservation.user_id == user.id,
+                                          Reservation.is_canceled.is_(False),
+                                          Reservation.booking_datetime > datetime.datetime.now()).first()
     flex_message = FlexSendMessage(
         alt_text='預約時間',
         contents={
@@ -144,7 +149,7 @@ def service_event(event):
                 "type": "postback",
                 "label": "頭皮檢測",
                 "data": "action=book&itemid=examine",
-                "displayText": "頭皮檢測"
+                "displayText": "頭皮檢測" if not reservation else '取消預約'
                 }
             },
             {
@@ -160,7 +165,7 @@ def service_event(event):
                     "type": "postback",
                     "label": "頭皮護理",
                     "data": "action=book&itemid=scalpcare",
-                    "displayText": "頭皮護理"
+                    "displayText": "頭皮護理" if not reservation else '取消預約'
                     }
                 }
                 ],
@@ -186,12 +191,12 @@ def booked(event, user):
         buttons_template_message = TemplateSendMessage(
             alt_text='Buttons template',
             template=ButtonsTemplate(
-                title='已與你有約',
+                title='已與你有約，確定要取消嗎？',
                 text=f'{reservation.booking_service}\n預約時間: {reservation.booking_datetime}',
                 actions=[
                     PostbackAction(
-                        label='取消預約',
-                        display_text='postback text',
+                        label='確定取消',
+                        display_text='抱歉，我確定取消預約',
                         data='action=canceled'
                     )
                 ]
