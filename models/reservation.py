@@ -19,3 +19,22 @@ class Reservation(db.Model):
         self.booking_service_itemid = booking_service_itemid
         self.booking_service = booking_service
         self.booking_datetime = booking_datetime
+
+class TimeSlot(db.Model):
+    __tablename__ = 'time_slots'
+    id = db.Column(db.Integer, primary_key=True)
+    date = db.Column(db.Date, nullable=False)
+    time = db.Column(db.Time, nullable=False)
+    count = db.Column(db.Integer, default=0)
+
+    def __init__(self, date, time):
+        self.date = date
+        self.time = time
+
+# class Booking(db.Model):
+#     __tablename__ = 'bookings'
+#     id = db.Column(db.Integer, primary_key=True)
+#     line_user_id = db.Column(db.String(50), nullable=False)
+#     start_time = db.Column(db.DateTime, nullable=False)
+#     service_id = db.Column(db.String(50), nullable=False)
+#     created_at = db.Column(db.DateTime, default=datetime.utcnow)

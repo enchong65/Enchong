@@ -1,9 +1,10 @@
 from line_bot_api import *
 from urllib.parse import parse_qsl
 import datetime
+from datetime import timedelta
 from extensions import db
 from models.user import User
-from models.reservation import Reservation
+from models.reservation import Reservation, TimeSlot
 
 LINE_CHANNEL_ACCESS_TOKEN = 'ixxJyMhiYZvVR2K+lichfu1MH8pUm6kwo7/WjwOminJNM9O658GCQ/6742DqxaP5b9DUNrMSgDUij+q6lRCdfa70qRoYuh3vQ78Zywi5p/SBHowVNFxTNFu4zQH/cyuqVAQZVCFDa9m/UHU8amdo7AdB04t89/1O/w1cDnyilFU='
  
@@ -45,7 +46,14 @@ services = {
 week=['星期一', '星期二', '星期三', '星期四', '星期五', '星期六', '星期日']
 
 book_list ={
-    '星期一':['10:30']
+    '一':['10:30', '11:00', '13:30', '14:00', '15:30', '16:00', '18:00', '18:30', '19:00'],
+    '二':['10:30', '11:00', '13:30', '14:00', '15:30', '16:00', '18:00', '18:30', '19:00'],
+    '三':['10:30', '11:00', '13:30', '14:00', '15:30', '16:00', '18:00', '18:30', '19:00'],
+    '四':['10:30', '11:00', '13:30', '14:00', '15:30', '16:00', '18:00', '18:30', '19:00'],
+    '五':['10:30', '11:00', '13:30', '14:00', '15:30', '16:00', '18:00', '18:30', '19:00'],
+    '六':['10:30', '11:00', '12:00', '12:30', 
+                 '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00'],
+    '日':['13:30', '14:30'],
 }
 
 
@@ -147,9 +155,9 @@ def service_event(event, user):
                 "height": "sm",
                 "action": {
                 "type": "postback",
-                "label": "頭皮檢測" if not reservation else '取消預約',
+                "label": "取消預約" if reservation and reservation.booking_service=='examine' else '頭皮檢測',
                 "data": "action=book&itemid=examine",
-                "displayText": "頭皮檢測" if not reservation else '取消預約'
+                "displayText": "取消預約" if reservation and reservation.booking_service=='examine' else '頭皮檢測'
                 }
             },
             {
@@ -163,9 +171,9 @@ def service_event(event, user):
                     "height": "sm",
                     "action": {
                     "type": "postback",
-                    "label": "頭皮護理" if not reservation else '取消預約',
+                    "label": "取消預約" if reservation and reservation.booking_service=='scalp' else '頭皮護理',
                     "data": "action=book&itemid=scalpcare",
-                    "displayText": "頭皮護理" if not reservation else '取消預約'
+                    "displayText": "取消預約" if reservation and reservation.booking_service=='scalp' else '頭皮護理'
                     }
                 }
                 ],
@@ -212,27 +220,74 @@ def booked(event, user):
         return False
     
 
-def service_select_event(event):
-    # data = dict(parse_qsl(event.postback.data))
-    # quick_reply_buttons = []
-    # today = datetime.datetime.today().date()
+def is_time_slot_available(date, time):
+    selected_date = date
+    formate_date = selected_date.split('-')
+    weekday = datetime.date(int(formate_date[0]),int(formate_date[1]),int(formate_date[2])).weekday()
+    week = ['一', '二', '三', '四', '五', '六', '日']
+    start_datetime = datetime.datetime.strptime(f"{date} {time}", "%Y-%m-%d %H:%M")
+    end_datetime = start_datetime + timedelta(hours=2)
+    
+    affected_slots = TimeSlot.query.filter(
+        TimeSlot.date == start_datetime.date(),
+        TimeSlot.time >= start_datetime.time(),
+        TimeSlot.time < end_datetime.time()
+    ).all()
+    if week[weekday] == '六':
+        return all(slot.count < 2 for slot in affected_slots)
+    elif week[weekday] == '日':
+        return all(slot.count < 1 for slot in affected_slots)
+    else:
+        if time in ['10:30', '11:00']:
+            return all(slot.count < 1 for slot in affected_slots)
+        else:
+            return all(slot.count < 2 for slot in affected_slots)
 
-    # for x in range(1, 8):
-    #     day = today + datetime.timedelta(days=x)
+
+def get_available_time_slots(date):
+    selected_date = date
+    formate_date = selected_date.split('-')
+    weekday = datetime.date(int(formate_date[0]),int(formate_date[1]),int(formate_date[2])).weekday()
+    week = ['一', '二', '三', '四', '五', '六', '日']
+    all_slots = book_list[week[weekday]]
+    available_slots = []
+
+    for time in all_slots:
+        # 先檢查資料庫中是否存在該日期和時間段的 TimeSlot
+        start_datetime = datetime.datetime.strptime(f"{date} {time}", "%Y-%m-%d %H:%M")
         
-    #     quick_reply_button = QuickReplyButton(
-    #             action=PostbackAction(label=f'{day}',
-    #                                 text=f'{day}',
-    #                                 data=f'action=select_time&date={data}')
-    #         )
-    #     quick_reply_buttons.append(quick_reply_button)
-    #     print(quick_reply_button)
-    # text_message = TextSendMessage(text='你想要哪天呢？',
-    #                                quick_reply=QuickReply(items=quick_reply_buttons))
-    # line_bot_api.reply_message(
-    #     event.reply_token,
-    #     [text_message]
-    # )
+        # 查找資料庫中是否已存在該時間段的記錄
+        slot = TimeSlot.query.filter_by(date=start_datetime.date(), time=start_datetime.time()).first()
+
+        if not slot:
+            # 如果資料庫中不存在該記錄，則創建一個新的
+            slot = TimeSlot(date=start_datetime.date(), time=start_datetime.time())
+            db.session.add(slot)
+            db.session.commit()  # 保存新的 TimeSlot 到資料庫
+
+        # 檢查該時間段是否可用
+        if is_time_slot_available(date, time):
+            available_slots.append(time)
+
+    return available_slots
+
+def update_time_slots(date, time):
+    start_datetime = datetime.datetime.strptime(f"{date} {time}", "%Y-%m-%d %H:%M")
+    end_datetime = start_datetime + timedelta(hours=2)
+
+    affected_slots = TimeSlot.query.filter(
+        TimeSlot.date == start_datetime.date(),
+        TimeSlot.time >= start_datetime.time(),
+        TimeSlot.time < end_datetime.time()
+    ).all()
+
+    for slot in affected_slots:
+            slot.count += 1
+
+
+    db.session.commit()
+
+def service_select_event(event):
     user = User.query.filter(User.line_id == event.source.user_id).first()
     if booked(event, user):
         return 
@@ -266,38 +321,43 @@ def service_select_event(event):
 def handle_date_selection(event):
     selected_date = event.postback.params['date']
     # 這裡你可以處理選擇的日期，例如保存到數據庫或進行下一步操作
-    response_message = TextSendMessage(text=f'您選擇: {selected_date}\n接下來請選擇時間')
+    response_message = TextSendMessage(text=f'您選擇: {selected_date}\n接下來請選擇時間，如沒有適合時段可直接點選上方「選擇日期」重新選擇')
     
     # 這裡你可以添加選擇時間的邏輯，例如調用 service_select_time_event
     line_bot_api.reply_message(event.reply_token, [response_message])
 
 def service_select_time_event(event):
-
     selected_date = str(event.postback.params['date'])
-    # 這裡你可以處理選擇的日期，例如保存到數據庫或進行下一步操作
     formate_date = selected_date.split('-')
     weekday = datetime.date(int(formate_date[0]),int(formate_date[1]),int(formate_date[2])).weekday()
-    response_message = TextSendMessage(text=f'您選擇: {selected_date}{week[weekday]}\n接下來請選擇時間')
+    week = ['一', '二', '三', '四', '五', '六', '日']
     
-    # 這裡你可以添加選擇時間的邏輯，例如調用 service_select_time_event
-    # line_bot_api.reply_message(event.reply_token, [response_message])
-
+    response_message = TextSendMessage(text=f'您選擇: {selected_date} 星期{week[weekday]}\n接下來請選擇時間\n\n如沒有適合時段可直接點選上方「選擇日期」重新選擇')
     
     data = dict(parse_qsl(event.postback.data))
     quick_reply_buttons = []
-    book_time = ['09:00', '11:00', '13:00', '15:00', '17:00']
-    for time in book_time:
+    available_times = get_available_time_slots(selected_date)
+    
+    for time in available_times:
         quick_reply_button = QuickReplyButton(
-                action=PostbackAction(label=time,
-                                    text=f'{time}',
-                                    data=f'action=confirm&time={time}&date={selected_date}&itemid={data["itemid"]}'))
+            action=PostbackAction(
+                label=time,
+                display_text=f'我要預約 {time}',
+                data=f'action=confirm&time={time}&date={selected_date}&itemid={data["itemid"]}'
+            )
+        )
         quick_reply_buttons.append(quick_reply_button)
-    text_message = TextSendMessage(text='你想要哪個時段？',
-                                    quick_reply=QuickReply(items=quick_reply_buttons))
-    line_bot_api.reply_message(
-        event.reply_token,
-        [response_message,text_message]
-    )
+    
+    if quick_reply_buttons:
+        text_message = TextSendMessage(
+            text='請選擇可用的時段：',
+            quick_reply=QuickReply(items=quick_reply_buttons)
+        )
+        line_bot_api.reply_message(event.reply_token, [response_message, text_message])
+    else:
+        no_slot_message = TextSendMessage(text='很抱歉，該日期沒有可用的時段。請選擇其他日期。')
+        line_bot_api.reply_message(event.reply_token, [response_message, no_slot_message])
+
 
 def confirm_event(event):
     data = dict(parse_qsl(event.postback.data))
@@ -331,36 +391,60 @@ def service_confirmed_event(event):
 
     print(booking_datetime)
 
-    user =User.query.filter(User.line_id == event.source.user_id).first()
+    date = data['date']
+    time = data['time']
+    
+    if is_time_slot_available(date, time):
+        update_time_slots(date, time)
+        user =User.query.filter(User.line_id == event.source.user_id).first()
 
-    reservation = Reservation(
-        user_id=user.id,
-        booking_service_itemid=booking_service,
-        booking_service=booking_service,
-        booking_datetime=booking_datetime
-    )
+        reservation = Reservation(
+            user_id=user.id,
+            booking_service_itemid=booking_service,
+            booking_service=booking_service,
+            booking_datetime=booking_datetime
+        )
 
-    db.session.add(reservation)
-    db.session.commit()
+        db.session.add(reservation)
+        db.session.commit()
 
-    line_bot_api.reply_message(
-        event.reply_token,
-        [TextSendMessage(text='感謝你的預約！')]
-    )
+        line_bot_api.reply_message(
+            event.reply_token,
+            [TextSendMessage(text='感謝你的預約！')]
+        )
+    else:
+        error_message = TextSendMessage(text='很抱歉，該時段已被預約。請選擇其他時段。')
+        line_bot_api.reply_message(event.reply_token, error_message)
 
 
 
 
     
 def service_canceled_event(event):
+
     user = User.query.filter(User.line_id == event.source.user_id).first()
     reservation = Reservation.query.filter(Reservation.user_id == user.id,
                                           Reservation.is_canceled.is_(False),
                                           Reservation.booking_datetime > datetime.datetime.now()).first()
+
     if reservation:
         reservation.is_canceled = True
 
         db.session.add(reservation)
+        db.session.commit()
+
+        start_datetime = reservation.booking_datetime
+        print(start_datetime)
+        end_datetime = start_datetime + timedelta(hours=2)
+
+        affected_slots = TimeSlot.query.filter(
+            TimeSlot.date == start_datetime.date(),
+            TimeSlot.time >= start_datetime.time(),
+            TimeSlot.time < end_datetime.time()
+        ).all()
+
+        for slot in affected_slots:
+                slot.count -= 1
         db.session.commit()
 
         line_bot_api.reply_message(
