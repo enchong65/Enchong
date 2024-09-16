@@ -234,7 +234,7 @@ def is_time_slot_available(date, time):
         TimeSlot.time < end_datetime.time()
     ).all()
     if week[weekday] == '六':
-        return all(slot.count < 2 for slot in affected_slots)
+        return all(slot.count < 2 for slot in affected_slots) and sum(slot.count for slot in affected_slots) < 32
     elif week[weekday] == '日':
         return all(slot.count < 1 for slot in affected_slots)
     else:
