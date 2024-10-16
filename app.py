@@ -3,6 +3,8 @@ from extensions import db, migrate
 from models.user import User
 from line_bot_api import *
 from events.admin import *
+from events.scheduler import init_scheduler
+from sqlalchemy import desc
 #======python的函數庫==========
 
 app = Flask(__name__)
@@ -12,7 +14,7 @@ app.config.from_object(os.environ.get('APP_SETTINGS', 'config.ProdConfig'))
 db.app = app
 db.init_app(app)
 migrate.init_app(app, db)
-
+init_scheduler(app)
 
 # 監聽所有來自 /callback 的 Post Request
 @app.route("/callback", methods=['POST'])
@@ -45,6 +47,8 @@ def handle_message(event):
             return
         if msg in ['*data', '*d']:
             list_reservation_event(event)
+        if msg.startswith("*手動"):
+            manipulation(event)
     else:
         text_message = TextSendMessage(msg)
     # line_bot_api.reply_message(event.reply_token, text_message)
@@ -58,6 +62,29 @@ def handle_message(event):
         user = User(profile.user_id, profile.display_name, profile.picture_url)
         db.session.add(user)
         db.session.commit()
+    
+    if msg.startswith('確定赴約'):
+        reservations = Reservation.query.filter_by(user_id=user.id).order_by(desc(Reservation.booking_datetime)).all()
+        # reservation = Reservation.query.get(reservation_id)
+        if reservations:
+            reservation = reservations[0]
+            reservation.confirmed = True
+            db.session.commit()
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text='感謝您的確認，我們期待您的到來！')
+            )
+    elif msg.startswith('取消預約'):
+        reservations = Reservation.query.filter_by(user_id=user.id).order_by(desc(Reservation.booking_datetime)).all()
+        # reservation = Reservation.query.get(reservation_id)
+        if reservations:
+            reservation = reservations[0]
+            db.session.delete(reservation)
+            db.session.commit()
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text='您的預約已取消。\n如需重新預約，請於選單點選預約時間。')
+            )
 # @handler.add(PostbackEvent)
 # def handle_message(event):
     # print(event.postback.data)

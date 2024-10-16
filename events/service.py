@@ -155,9 +155,9 @@ def service_event(event, user):
                 "height": "sm",
                 "action": {
                 "type": "postback",
-                "label": "取消預約" if reservation and reservation.booking_service=='examine' else '頭皮檢測',
+                "label": "取消預約" if reservation and reservation.booking_service=='頭皮檢測' else '頭皮檢測',
                 "data": "action=book&itemid=examine",
-                "displayText": "取消預約" if reservation and reservation.booking_service=='examine' else '頭皮檢測'
+                "displayText": "取消預約" if reservation and reservation.booking_service=='頭皮檢測' else '頭皮檢測'
                 }
             },
             {
@@ -171,9 +171,9 @@ def service_event(event, user):
                     "height": "sm",
                     "action": {
                     "type": "postback",
-                    "label": "取消預約" if reservation and reservation.booking_service=='scalp' else '頭皮護理',
+                    "label": "取消預約" if reservation and reservation.booking_service=='頭皮護理' else '頭皮護理',
                     "data": "action=book&itemid=scalpcare",
-                    "displayText": "取消預約" if reservation and reservation.booking_service=='scalp' else '頭皮護理'
+                    "displayText": "取消預約" if reservation and reservation.booking_service=='頭皮護理' else '頭皮護理'
                     }
                 }
                 ],
@@ -289,8 +289,8 @@ def update_time_slots(date, time):
 
 def service_select_event(event):
     user = User.query.filter(User.line_id == event.source.user_id).first()
-    if booked(event, user):
-        return 
+    # if booked(event, user):
+    #     return 
     data = dict(parse_qsl(event.postback.data))
     today = datetime.date.today()
     max_date = today + datetime.timedelta(days=30)  # 允許選擇未來30天內的日期
@@ -386,7 +386,7 @@ def confirm_event(event):
 def service_confirmed_event(event):
     data = dict(parse_qsl(event.postback.data))
 
-    booking_service = data['itemid']
+    booking_service = '頭皮護理' if data['itemid'] == 'examine' else '頭皮檢測'
     booking_datetime = datetime.datetime.strptime(f'{data["date"]} {data["time"]}', '%Y-%m-%d %H:%M')
 
     print(booking_datetime)

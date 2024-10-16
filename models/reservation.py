@@ -12,7 +12,8 @@ class Reservation(db.Model):
     is_canceled = db.Column(db.Boolean(), server_default='0')
     created_on = db.Column(db.DateTime, default=datetime.datetime.now())
     updated_on = db.Column(db.DateTime, default=datetime.datetime.now(), onupdate=datetime.datetime.now())
-
+    reminder_sent = db.Column(db.Boolean(), default=False)
+    confirmed = db.Column(db.Boolean(), default=False)
 
     def __init__(self, user_id, booking_service_itemid, booking_service, booking_datetime):
         self.user_id = user_id
