@@ -9,4 +9,5 @@ class DevConfig(Config):
 
 class ProdConfig(Config):
     DEBUG = True
-    SQLALCHEMY_DATABASE_URI = 'postgresql://database_rzcc_user:vzHmHnYl7XI27VZ52vyHcyHgoKLZ6iT6@dpg-crfuoabqf0us73dd198g-a/database_rzcc'
+    SQLALCHEMY_DATABASE_URI = 'postgresql://database2_mzbr_user:7jqkG1fZ09U3PtTB2J0F5hUd2nAItrv5@dpg-cs7m1erv2p9s73f54rtg-a/database2_mzbr'
+    #internal database url
