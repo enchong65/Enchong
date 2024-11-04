@@ -5,6 +5,7 @@ class Reservation(db.Model):
     __tablename__ = 'reservation'
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    name = db.Column(db.String(50), nullable=True)
     booking_service_itemid = db.Column(db.String(50), nullable=False)
     booking_service = db.Column(db.String(150), nullable=False)
     booking_datetime = db.Column(db.DateTime, nullable=False)
@@ -15,11 +16,13 @@ class Reservation(db.Model):
     reminder_sent = db.Column(db.Boolean(), default=False)
     confirmed = db.Column(db.Boolean(), default=False)
 
-    def __init__(self, user_id, booking_service_itemid, booking_service, booking_datetime):
+    def __init__(self, user_id, booking_service_itemid, booking_service, booking_datetime, name, confirmed):
         self.user_id = user_id
         self.booking_service_itemid = booking_service_itemid
         self.booking_service = booking_service
         self.booking_datetime = booking_datetime
+        self.name = name
+        self.confirmed = confirmed
 
 class TimeSlot(db.Model):
     __tablename__ = 'time_slots'

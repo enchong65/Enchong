@@ -37,6 +37,16 @@ def callback():
 def handle_message(event):
     msg=str(event.message.text)
     user = User.query.filter(User.line_id == event.source.user_id).first()
+    if not user:
+        profile = line_bot_api.get_profile(event.source.user_id)
+        # print(profile.display_name)
+        # print(profile.user_id)
+        # print(profile.picture_url)
+        # print(profile.status_message)
+        user = User(profile.user_id, profile.display_name, profile.picture_url)
+        db.session.add(user)
+        db.session.commit()
+    
     if msg =='堂數顯示':
         about_us_event(event)
     if msg =='我要預約':
@@ -53,15 +63,7 @@ def handle_message(event):
         text_message = TextSendMessage(msg)
     # line_bot_api.reply_message(event.reply_token, text_message)
     
-    if not user:
-        profile = line_bot_api.get_profile(event.source.user_id)
-        # print(profile.display_name)
-        # print(profile.user_id)
-        # print(profile.picture_url)
-        # print(profile.status_message)
-        user = User(profile.user_id, profile.display_name, profile.picture_url)
-        db.session.add(user)
-        db.session.commit()
+    
     
     if msg.startswith('確定赴約'):
         reservations = Reservation.query.filter_by(user_id=user.id).order_by(desc(Reservation.booking_datetime)).all()

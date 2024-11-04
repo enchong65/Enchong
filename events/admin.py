@@ -29,6 +29,7 @@ def manipulation(event):
     user = User.query.filter(User.line_id == event.source.user_id).first()
     reservation = Reservation(
             user_id=user.id,
+            name = name,
             booking_service_itemid=service,
             booking_service=service,
             booking_datetime=time,
@@ -39,5 +40,5 @@ def manipulation(event):
     db.session.commit()
     line_bot_api.reply_message(
         event.reply_token,
-        TextSendMessage(text=f"已加入新行程：\n聯絡電話：{name}\n時間：{time}\n項目：{service}")
+        TextSendMessage(text=f"已加入新行程：\n姓名：{name}\n時間：{time}\n項目：{service}")
     )        
