@@ -400,6 +400,8 @@ def service_confirmed_event(event):
 
         reservation = Reservation(
             user_id=user.id,
+            name = user.display_name,
+            confirmed = False,
             booking_service_itemid=booking_service,
             booking_service=booking_service,
             booking_datetime=booking_datetime
