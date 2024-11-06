@@ -289,8 +289,8 @@ def update_time_slots(date, time):
 
 def service_select_event(event):
     user = User.query.filter(User.line_id == event.source.user_id).first()
-    # if booked(event, user):
-    #     return 
+    if booked(event, user):
+        return 
     data = dict(parse_qsl(event.postback.data))
     today = datetime.date.today()
     max_date = today + datetime.timedelta(days=30)  # 允許選擇未來30天內的日期
